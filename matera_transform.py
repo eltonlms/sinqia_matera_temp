@@ -58,20 +58,23 @@ def transform_movements(mov_df: pd.DataFrame, accounts_df: pd.DataFrame) -> pd.D
         .rename(columns={"conta_matera": "Cta. Crédito Matera"})
         .drop(columns="conta_sinqia")
         .loc[:, ["Cta. Débito Matera", "Cta. Crédito Matera", "Data  de movimento", "Vlr. lança."]]
-    )
+        .assign(
+        date=lambda _df: pd.to_datetime(_df['Data  de movimento'], errors='coerce'),
+        date_str=lambda _df: _df['Data  de movimento'].dt.strftime("%Y%m%d"),
+    ))
 
     return transformed_df
 
 
 def prepare_transaction_dataframe(mov_df: pd.DataFrame) -> pd.DataFrame:
     """Prepare a DataFrame for transactions by separating debits and credits."""
-    debit_df = mov_df[["Cta. Débito Matera", "Data  de movimento", "Vlr. lança."]].rename(
+    debit_df = mov_df[["Cta. Débito Matera", "date_str", "Vlr. lança."]].rename(
         columns={"Cta. Débito Matera": "cta"}
     )
 
     debit_df["lcto"] = "D"
 
-    credit_df = mov_df[["Cta. Crédito Matera", "Data  de movimento", "Vlr. lança."]].rename(
+    credit_df = mov_df[["Cta. Crédito Matera", "date_str", "Vlr. lança."]].rename(
         columns={"Cta. Crédito Matera": "cta"}
     )
 
@@ -89,7 +92,7 @@ def add_and_populate_columns(df: pd.DataFrame, column_names: List[str]) -> pd.Da
 
     column_mapping = {
         "COD_CONTA_CONTABIL": "cta",
-        "DT_LANC_CONTABIL": "Data  de movimento",
+        "DT_LANC_CONTABIL": "date_str",
         "TIPO_LANC": "lcto",
         "VLR": "Vlr. lança.",
     }
@@ -112,6 +115,7 @@ def main(file_path: str) -> None:
 
     # Uncomment if you want to tweak accounts
     # accounts = tweak_accounts(accounts)
+    accounts = accounts.astype("Int64")
 
     initial_df = pd.read_excel(f"input/{file_path}")
 
@@ -121,7 +125,7 @@ def main(file_path: str) -> None:
 
     result_df = add_and_populate_columns(transformed_df, result_columns)
 
-    result_df.to_csv("output/modelo_de_importacao_sinqia_matera.csv", index=False)
+    result_df.to_csv("output/modelo_de_importacao_sinqia_matera.csv", index=False, sep=";", decimal=",")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
