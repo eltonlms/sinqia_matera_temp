@@ -121,7 +121,7 @@ def main(file_path: str) -> None:
 
     result_df = add_and_populate_columns(transformed_df, result_columns)
 
-    result_df.to_csv("output/resultado_esperado.csv", index=False)
+    result_df.to_csv("output/modelo_de_importacao_sinqia_matera.csv", index=False)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
